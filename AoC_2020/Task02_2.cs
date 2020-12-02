@@ -1,5 +1,5 @@
 ﻿using System;
-using FluentAssertions;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace AoC_2020
@@ -8,10 +8,36 @@ namespace AoC_2020
     public class Task02_2
     {
         [Test]
-        [TestCase(@"1-3 a: abcde
+        [TestCaseSource(nameof(TestCases))]
+        public int Task(string input)
+        {
+            var lines = input.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
+            var acc = 0;
+            foreach (var line in lines)
+            {
+                var lineSplit = line.Split(new[] {":"}, StringSplitOptions.RemoveEmptyEntries);
+                var policySplit = lineSplit[0].Trim().Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries);
+                var letter = policySplit[1].Trim()[0];
+                var numbersSplit = policySplit[0].Trim().Split(new[] {"-"}, StringSplitOptions.RemoveEmptyEntries);
+                var start = int.Parse(numbersSplit[0]);
+                var end = int.Parse(numbersSplit[1]);
+                var pass = lineSplit[1].Trim();
+
+                if (pass[start - 1] == letter ^ pass[end - 1] == letter)
+                {
+                    ++acc;
+                }
+            }
+
+            return acc;
+        }
+
+        private static IEnumerable<TestCaseData> TestCases()
+        {
+            yield return new TestCaseData(@"1-3 a: abcde
 1-3 b: cdefg
-2-9 c: ccccccccc", 1)]        
-        [TestCase(@"9-11 p: pppppppppxblp
+2-9 c: ccccccccc").Returns(1);
+            yield return new TestCaseData(@"9-11 p: pppppppppxblp
 2-4 b: bbxbb
 3-5 q: dqfqb
 5-8 g: ggcgggglg
@@ -1010,28 +1036,7 @@ namespace AoC_2020
 2-4 d: dbddddc
 13-14 g: gggggggbgggmgmgm
 4-12 r: rrrzrgkrrrrkr
-14-17 n: nnhnnnnnnnnnnnnnhnn", 2)]
-        public void Task(string input, int expected)
-        {
-            var lines = input.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
-            var acc = 0;
-            foreach (var line in lines)
-            {
-                var lineSplit = line.Split(new[] {":"}, StringSplitOptions.RemoveEmptyEntries);
-                var policySplit = lineSplit[0].Trim().Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries);
-                var letter = policySplit[1].Trim()[0];
-                var numbersSplit = policySplit[0].Trim().Split(new[] {"-"}, StringSplitOptions.RemoveEmptyEntries);
-                var start = int.Parse(numbersSplit[0]);
-                var end = int.Parse(numbersSplit[1]);
-                var pass = lineSplit[1].Trim();
-
-                if (pass[start - 1] == letter ^ pass[end - 1] == letter)
-                {
-                    ++acc;
-                }
-            }
-
-            acc.Should().Be(expected);
+14-17 n: nnhnnnnnnnnnnnnnhnn").Returns(705);
         }
     }
 }

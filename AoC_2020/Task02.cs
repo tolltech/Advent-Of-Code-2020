@@ -1011,7 +1011,7 @@ namespace AoC_2020
 2-4 d: dbddddc
 13-14 g: gggggggbgggmgmgm
 4-12 r: rrrzrgkrrrrkr
-14-17 n: nnhnnnnnnnnnnnnnhnn", 2)]
+14-17 n: nnhnnnnnnnnnnnnnhnn", 628)]
         public void Task(string input, int expected)
         {
             var lines = input.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
