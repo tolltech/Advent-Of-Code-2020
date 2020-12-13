@@ -20,15 +20,15 @@ namespace AoC_2020
                 .ToArray();
 
             var currentBuses = buses.ToArray();
-            var acc = 0L;
+            var currentTimestamp = 0L;
             while (currentBuses.Length >= 2)
             {
                 var firstBus = currentBuses[0];
                 var secondBus = currentBuses[1];
-                var firstTimestamp = NOK(firstBus.BusId, secondBus.BusId, secondBus.Index);
+                var firstTimestamp = NOK(firstBus.BusId, secondBus.BusId, secondBus.Index, currentTimestamp);
                 var period = NOK(firstBus.BusId, secondBus.BusId);
 
-                acc += firstTimestamp;
+                currentTimestamp = firstTimestamp;
 
                 currentBuses = new[] {(BusId: period, Index: 0)}
                     .Concat(currentBuses
@@ -45,7 +45,7 @@ namespace AoC_2020
             //     noks.Add((firstTimestamp, period));
             // }
 
-            return acc;
+            return currentTimestamp;
         }
 
         static long NOD(long a, long b)
@@ -69,17 +69,22 @@ namespace AoC_2020
             return Math.Abs(a * b) / NOD(a, b);
         }
 
-        static long NOK(long a, long b, long delta)
+        static long NOK(long a, long b, long deltaB, long fromValueAndDeltaA)
         {
-            var ak = 1;
-            var bk = 1;
+            var ak = 0;
+            var bk = fromValueAndDeltaA / b  + 1;
             while (true)
             {
-                var an = ak * a;
-                var bn = bk * b - delta;
+                var an = ak * a + fromValueAndDeltaA;
+                var bn = bk * b - deltaB;
                 if (bn < 0)
                 {
                     ++bk;
+                    continue;
+                }
+                if (an < 0)
+                {
+                    ++ak;
                     continue;
                 }
 
@@ -117,7 +122,7 @@ namespace AoC_2020
         [TestCase(3, 5, 4, ExpectedResult = 6)]
         public long TestNokDelta(int a, int b, int delta)
         {
-            return NOK(a, b, delta);
+            return NOK(a, b, delta, 0);
         }
 
         private static IEnumerable<TestCaseData> TestCases()
@@ -129,7 +134,7 @@ namespace AoC_2020
             yield return new TestCaseData(@"3,5,4").Returns(54);
             yield return new TestCaseData(@"3,5,x,4").Returns(9);
             yield return new TestCaseData(@"17,x,13,19").Returns(3417);
-            yield return new TestCaseData(@"17,x,13").Returns(0);
+            yield return new TestCaseData(@"17,x,13").Returns(102);
             yield return new TestCaseData(@"67,7,59,61").Returns(754018);
             yield return new TestCaseData(@"67,x,7,59,61").Returns(779210);
             yield return new TestCaseData(@"67,7,x,59,61").Returns(1261476);
