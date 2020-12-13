@@ -98,7 +98,9 @@ namespace AoC_2020
                 }
                 else
                 {
-                    ++bk;
+                    var deltaBk = (an - bn) / b - 1;
+                    deltaBk = Math.Max(deltaBk, 1);
+                    bk+=deltaBk;
                 }
             }
         }
@@ -141,7 +143,7 @@ namespace AoC_2020
             yield return new TestCaseData(@"1789,37,47,1889").Returns(1202161486);
             yield return new TestCaseData(
                     @"29,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,37,x,x,x,x,x,409,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,17,13,19,x,x,x,23,x,x,x,x,x,x,x,353,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,41")
-                .Returns(0);
+                .Returns(408270049879073);
         }
     }
 }
