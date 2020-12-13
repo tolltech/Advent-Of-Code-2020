@@ -19,17 +19,33 @@ namespace AoC_2020
                 .Where(x => x != default)
                 .ToArray();
 
-            var firstBus = buses.First();
-
-            var noks = new List<(long FirstTimestamp, long Period)>();
-            foreach (var bus in buses.Skip(1))
+            var currentBuses = buses.ToArray();
+            var acc = 0L;
+            while (currentBuses.Length >= 2)
             {
-                var firstTimestamp = NOK(firstBus.BusId, bus.BusId, bus.Index);
-                var period = NOK(firstBus.BusId, bus.BusId);
-                noks.Add((firstTimestamp, period));
+                var firstBus = currentBuses[0];
+                var secondBus = currentBuses[1];
+                var firstTimestamp = NOK(firstBus.BusId, secondBus.BusId, secondBus.Index);
+                var period = NOK(firstBus.BusId, secondBus.BusId);
+
+                acc += firstTimestamp;
+
+                currentBuses = new[] {(BusId: period, Index: 0)}
+                    .Concat(currentBuses
+                        .Skip(2)
+                        .Select(x => (x.BusId, x.Index)))
+                    .ToArray();
             }
 
-            return 0;
+            // var noks = new List<(long FirstTimestamp, long Period)>();
+            // foreach (var bus in buses.Skip(1))
+            // {
+            //     var firstTimestamp = NOK(firstBus.BusId, bus.BusId, bus.Index);
+            //     var period = NOK(firstBus.BusId, bus.BusId);
+            //     noks.Add((firstTimestamp, period));
+            // }
+
+            return acc;
         }
 
         static long NOD(long a, long b)
