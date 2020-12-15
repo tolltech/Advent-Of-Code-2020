@@ -50,54 +50,37 @@ namespace AoC_2020
 
         private long Sum(List<(string, long)> memory)
         {
-            var newMemory = memory.ToList();
-
-            while (true)
+            var result = new Dictionary<string, long>();
+            foreach (var mem in memory)
             {
-                var i = 0;
-                while (i < newMemory.Count)
+                foreach (var address in GetAddresses(mem.Item1, 0, string.Empty))
                 {
-                    for (var j = i + 1; j < newMemory.Count; ++j)
-                    {
-                        var first = newMemory[i].Item1;
-                        var second = newMemory[j].Item1;
-
-                        if (AddressDiff(first, second))
-                        {
-                            continue;
-                        }
-
-                        for (var c = 0; c < 36; ++c)
-                        {
-                            var c1 = first[c];
-                            var c2 = second[c];
-                            if (!char.IsDigit(c1) && char.IsDigit(c2))
-                            {
-                                return false;
-                            }
-                        }
-                    }
-
-                    ++i;
+                    result[address] = mem.Item2;
                 }
             }
 
-            return 0;
+            return result.Values.Sum();
         }
 
-        private bool AddressDiff(string left, string right)
+        private List<string> GetAddresses(string mask, int ci, string s)
         {
-            for (var c = 0; c < 36; ++c)
+            if (ci == 36)
             {
-                var c1 = left[c];
-                var c2 = right[c];
-                if (char.IsDigit(c1) && char.IsDigit(c2) && c1 != c2)
-                {
-                    return false;
-                }
+                return new List<string> {s};
             }
 
-            return true;
+            switch (mask[ci])
+            {
+                case '0': 
+                case '1':
+                    return GetAddresses(mask, ci + 1, s + mask[ci]);
+                case 'X':
+                    var result = new List<string>();
+                    result.AddRange(GetAddresses(mask, ci + 1, s + "0"));
+                    result.AddRange(GetAddresses(mask, ci + 1, s + "1"));
+                    return result;
+                default: throw new Exception();
+            }
         }
 
         private long Sum(List<char[]> longs)
@@ -713,7 +696,7 @@ mask = X01X10101X1X0100000X10101011X110X011
 mem[1103] = 6682
 mem[49066] = 528792283
 mem[42040] = 222766")
-                .Returns(7611244640053);
+                .Returns(3705162613854);
         }
     }
 }
