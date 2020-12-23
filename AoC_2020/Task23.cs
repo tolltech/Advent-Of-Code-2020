@@ -25,16 +25,18 @@ namespace AoC_2020
 
                 currentIndex = (cups.Select((x, i) => (Index: i, Label: x)).First(x => x.Label == currentLabel).Index + 1) % cups.Length;
             }
-
+            
+            return string.Join(string.Empty, GetSnapshot(cups));
+        }
+        
+        private static IEnumerable<int> GetSnapshot(int[] cups)
+        {
             var index1 = cups.Select((x, i) => (Index: i, Label: x)).First(x => x.Label == 1).Index;
 
-            var result = string.Empty;
             for (var i = 0; i < cups.Length - 1; i++)
             {
-                result += cups[(index1 + i + 1) % cups.Length];
+                yield return cups[(index1 + i + 1) % cups.Length];
             }
-            
-            return result;
         }
 
         private int[] ReplaceCups(int[] cups, int[] pickedUp, (int Index, int Label) destination)
