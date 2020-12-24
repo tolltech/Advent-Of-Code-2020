@@ -14,7 +14,7 @@ namespace AoC_2020
         {
             var lines = input.Split(new[] {"\r", "\n"}, StringSplitOptions.RemoveEmptyEntries).ToArray();
 
-            var blackTiles = new HashSet<(int E, int Ne, int Nw)>();
+            var blackTiles = new HashSet<Tile>();
 
             foreach (var line in lines)
             {
@@ -22,11 +22,11 @@ namespace AoC_2020
                     .Replace("w", "w,").Replace("e", "e,")
                     .Split(",", StringSplitOptions.RemoveEmptyEntries);
 
-                (int E, int Ne, int Nw) tile = default;
+                var tile = new Tile();
 
                 foreach (var command in commands)
                 {
-                    (int E, int Ne, int Nw) step = default;
+                    (int E, int Ne, int Nw) step;
                     switch (command)
                     {
                         case "ne":
@@ -50,9 +50,7 @@ namespace AoC_2020
                         default: throw new Exception("tile");
                     }
 
-                    tile.Nw += step.Nw;
-                    tile.Ne += step.Ne;
-                    tile.E += step.E;
+                    tile = tile.Step(step);
                 }
 
                 if (blackTiles.Contains(tile))
@@ -65,9 +63,62 @@ namespace AoC_2020
                 }
             }
 
+            for (var move = 0; move < movesCount; ++move)
+            {
+                var allTiles = blackTiles.Concat(blackTiles.SelectMany(x => x.Neighbours())).ToArray();
+                var newBlackTiles = new HashSet<Tile>();
+                foreach (var tile in allTiles)
+                {
+                    var blackNeighborCount = tile.Neighbours().Count(blackTiles.Contains);
+                    if (blackTiles.Contains(tile) && (blackNeighborCount == 1 || blackNeighborCount == 2))
+                    {
+                        newBlackTiles.Add(tile);
+                    }
+                    if (!blackTiles.Contains(tile) && blackNeighborCount == 2)
+                    {
+                        newBlackTiles.Add(tile);
+                    }
+                }
 
+                blackTiles = newBlackTiles;
+            }
 
             return blackTiles.Count;
+        }
+
+        public struct Tile
+        {
+            public Tile((int E, int Ne, int Nw) tile)
+            {
+                Ne = tile.Ne;
+                Nw = tile.Nw;
+                E = tile.E;
+            }
+
+            public int Nw { get; set; }
+            public int Ne { get; set; }
+            public int E { get; set; }
+
+            public IEnumerable<Tile> Neighbours()
+            {
+                yield return Step((E: 1, Ne: 0, Nw: 1));
+                yield return Step((E: 0, Ne: -1, Nw: 1));
+                yield return Step((E: -1, Ne: -1, Nw: 0));
+                yield return Step((E: -1, Ne: 0, Nw: -1));
+                yield return Step((E: 0, Ne: 1, Nw: -1));
+                yield return Step((E: 1, Ne: 1, Nw: 0));
+            }
+
+            public Tile Step((int E, int Ne, int Nw) step)
+            {
+                var copy = this;
+
+                copy.E += step.E;
+                copy.Ne += step.Ne;
+                copy.Nw += step.Nw;
+
+                return copy;
+            }
         }
 
         private static IEnumerable<TestCaseData> TestCases()
@@ -91,7 +142,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",1).Returns(15);
+wseweeenwnesenwwwswnew", 1).Returns(15).SetName("1");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -111,7 +162,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",2).Returns(12);
+wseweeenwnesenwwwswnew", 0).Returns(10).SetName("0");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -131,7 +182,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",3).Returns(25);
+wseweeenwnesenwwwswnew", 2).Returns(12).SetName("2");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -151,7 +202,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",4).Returns(14);
+wseweeenwnesenwwwswnew", 3).Returns(25).SetName("3");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -171,7 +222,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",5).Returns(23);
+wseweeenwnesenwwwswnew", 4).Returns(14).SetName("4");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -191,7 +242,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",6).Returns(28);
+wseweeenwnesenwwwswnew", 5).Returns(23).SetName("5");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -211,7 +262,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",7).Returns(41);
+wseweeenwnesenwwwswnew", 6).Returns(28).SetName("6");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -231,7 +282,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",8).Returns(37);
+wseweeenwnesenwwwswnew", 7).Returns(41).SetName("7");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -251,7 +302,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",9).Returns(49);
+wseweeenwnesenwwwswnew", 8).Returns(37).SetName("8");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -271,7 +322,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",10).Returns(37);
+wseweeenwnesenwwwswnew", 9).Returns(49).SetName("9");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -291,7 +342,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",20).Returns(132);
+wseweeenwnesenwwwswnew", 10).Returns(37).SetName("10");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -311,7 +362,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",30).Returns(259);
+wseweeenwnesenwwwswnew", 20).Returns(132).SetName("20");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -331,7 +382,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",40).Returns(406);
+wseweeenwnesenwwwswnew", 30).Returns(259).SetName("30");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -351,7 +402,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",50).Returns(566);
+wseweeenwnesenwwwswnew", 40).Returns(406).SetName("40");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -371,7 +422,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",60).Returns(788);
+wseweeenwnesenwwwswnew", 50).Returns(566).SetName("50");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -391,7 +442,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",70).Returns(1106);
+wseweeenwnesenwwwswnew", 60).Returns(788).SetName("60");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -411,7 +462,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",80).Returns(1373);
+wseweeenwnesenwwwswnew", 70).Returns(1106).SetName("70");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -431,7 +482,7 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",90).Returns(1844);
+wseweeenwnesenwwwswnew", 80).Returns(1373).SetName("80");
             yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
 neeenesenwnwwswnenewnwwsewnenwseswesw
 seswneswswsenwwnwse
@@ -451,7 +502,27 @@ wnwnesenesenenwwnenwsewesewsesesew
 nenewswnwewswnenesenwnesewesw
 eneswnwswnwsenenwnwnwwseeswneewsenese
 neswnwewnwnwseenwseesewsenwsweewe
-wseweeenwnesenwwwswnew",100).Returns(2208);
+wseweeenwnesenwwwswnew", 90).Returns(1844).SetName("90");
+            yield return new TestCaseData(@"sesenwnenenewseeswwswswwnenewsewsw
+neeenesenwnwwswnenewnwwsewnenwseswesw
+seswneswswsenwwnwse
+nwnwneseeswswnenewneswwnewseswneseene
+swweswneswnenwsewnwneneseenw
+eesenwseswswnenwswnwnwsewwnwsene
+sewnenenenesenwsewnenwwwse
+wenwwweseeeweswwwnwwe
+wsweesenenewnwwnwsenewsenwwsesesenwne
+neeswseenwwswnwswswnw
+nenwswwsewswnenenewsenwsenwnesesenew
+enewnwewneswsewnwswenweswnenwsenwsw
+sweneswneswneneenwnewenewwneswswnese
+swwesenesewenwneswnwwneseswwne
+enesenwswwswneneswsenwnewswseenwsese
+wnwnesenesenenwwnenwsewesewsesesew
+nenewswnwewswnenesenwnesewesw
+eneswnwswnwsenenwnwnwwseeswneewsenese
+neswnwewnwnwseenwseesewsenwsweewe
+wseweeenwnesenwwwswnew", 100).Returns(2208).SetName("100");
             yield return new TestCaseData(@"seeseesweenwseseseeneneseseseseseswse
 nwseswswswnwnwsesweswswwsewwneswswswnw
 wwnwewswwwnwwwwwenwwsewnwww
@@ -872,7 +943,428 @@ nwnwenwnwnwnwwnwnwnwswnwnwnesenw
 wenweswwwwwwwwwwwnwnwwwwwse
 sweneswsewwswsesweswswswswswnwsweswse
 swswswswswnwseswswseswenwwswnesweswsw
-senwseseeeeweenesenesweseeseeseswse",100).Returns(0);
+senwseseeeeweenesenesweseeseeseswse", 0).Returns(373).SetName("0m");
+            yield return new TestCaseData(@"seeseesweenwseseseeneneseseseseseswse
+nwseswswswnwnwsesweswswwsewwneswswswnw
+wwnwewswwwnwwwwwenwwsewnwww
+neswnewsenwneswneneeswswwneenene
+wwsenwwwesenewswswnwwwwswewwwnw
+nwwwswnweswseswweswneeswwwwwww
+seseswswswswswswswwseswneseswnwseesw
+swswwseseswswswswswswswswwenwnwwswwsw
+swnwnenewnwenwswsewnenwnweeswneneswsw
+swwnenwwwnwnwnwseseewnewwwenwew
+nwnenenwnwnenenwnwnewnenwnwnwnwsenwsene
+swswswswswswswswswswseswswne
+wswwnwsewsewnewnwnwwnewnwnenwnwnw
+swenwnenwnwnesenwnenenwnwnwnwnwnwnenwwne
+nwwnwnwnwwnwnwnwnesewseswewnweswnwnw
+swseswswsenesesewseswswseneswsenweswsesw
+wnwnwnwnwsenwnwenenwwnenwneswnwnwwsew
+nwnenenenewseneneneenwseenwweswnesw
+eseeseneweewesesewesesesewenee
+swnweseswwseseseswswsesweswswnwnwsweswse
+enwneseeswneseeseeeenesesewsewee
+seseswesesenwesenwseswneseseseseseswe
+esewswseseseseseswseseesesesesenesewse
+neseseseewseseseseseewesewseeesee
+nwnwnesenwnwswwnwnwnenwswwnenesweeee
+wnwnenenwnwnwnenwnwwsenwnwsenwnwswnenw
+neswswswswswswwnesweswswswnwseewswwsw
+senwwnewnwnwsenwwwwnenwnwswnenwnenwswnw
+seswneneweeweenweneenenenwseee
+nenwnwwswwnwswenenwseeenwnwswwnwnwsew
+nenwnwewswnwsenewwnwnwswwnwnwwnwse
+nwsenweswnwwnwnwneenewnwnwwnwnwnwsw
+eseneweseeseeeseseeeewesesesee
+nwneseeeweneswnwesweeneneeenenese
+wswswswwswwswswneswswnwseswwswswwsw
+senwnweeswenweenwenwseneeseswseee
+wnenwnwnenwnenwnenwnenwnwe
+seswwenwneswwsewswnwseenwnwesenew
+neeneeseeneenwneeeneneesenwenene
+nenweswnwswswseeswswneeswnewenwwwsw
+nenenewnenweswneneswsenwnewnee
+nwswsweswenwswswswswseswswwswseeswswse
+nweeswswnenwnwenenewnwswswnenene
+swnwnenesweenwnenenenwnenwnwnwnenewne
+sweswswswswnewswswswswnewswswwswswsw
+nwnwnwwewsenwnwnwnwwnwnwwnwnwnwwnw
+senenwnenenenesenwnwnwnenenenewswwnwsw
+sewnwsweswwwwwwewnwwsewwwnesw
+eeeseeneenenwswswenwee
+nwseseeeenwseseeswseseese
+wwneseneneneneneneseneneneneneenenene
+eeeweeseeeeeeesweeeseene
+eeeneneeneweneseeneneeenenenewe
+wnwsewwwwwwwwnewwnww
+nwnwswnwnenwnwneswnwsenwnwsenw
+newewseswsenwseswsesenwsesesenwseneswse
+weesewseeeeeseeseeeeswesenwe
+nwnwnwwwsenwnwnwwnewnwsewwnwnwwnwse
+senwseseeseeeeeseseseesesesenw
+enenenenenenenenenenwneneneneswneswnenwnw
+wswswwwnwnewswwsewwseeweneesww
+sewwnewnwwwwwwwwsewwwwnwww
+enweeneeeeeneesweeneneeneswsenw
+swswswswswswswswsweswswswswwswswswnene
+wewwnwnwswwnenwswnwneswnwnweenwnwsee
+nwnenenenwnenenwnesweneneneseneewswnew
+nwwswnwswewseneewswnwnwenenwwww
+wswwnenewesenwwswwsewnenewswwwww
+wwwwnwwwwwewwnesewwwwwsww
+senwwwseesesenwseseseneseseseesenwswsw
+sewseseseseswswsenwseseswnwsesesenesesw
+neswneneneneeneenenwneneneeneee
+eneenwnenewenwsweswnenwesee
+swnewnwnwnwneewsewnwenwnwwwewswwse
+eeeeeeeeeeeeeeesenwwse
+swswswwswswwwnesewwswnewswwwnewsw
+nwwwwswwswwwswnewswwee
+neseswnwseswswnwseswswseseswswswseenwse
+wseewwwwwsewwwwnewwwwnwne
+nenwnwswnwnweenwnwnwnwnwnwnwwnwnwnwnw
+wewwnwwwnwnwesewnwwnwnwwnwnwwnw
+nwnewwwwnwswwnwnwnwewwnwnwwsenwwnw
+eewneeeeeeeneeee
+wseseseswseenesenwwsesesesesesenesesese
+eeeeeweeeeeneenene
+newswneeneeneneenenesenesweswnenee
+seswewesenesenenesewsenwwswese
+nwswnwnwnwnwwnwneenwe
+nenwnwnwnenwnwsenwnwnwnwnwwnwnwnwnwnwse
+neneneeswswenenenenwnenwwseswswenw
+eeenwsenwnwseseesweeeseswewe
+nwwsenwnwnwsenwnwnwnwsenwwwnwnewnwnenw
+neseeeeenwneeeneeseenweneeee
+nwnwwnwnwwewnewnwwnwnwsenwsenwwsww
+nenwnwnwenwwseneswwnwnwnesenwenenwnwwnw
+swsweneeeenweeseseeeeeeneenwsw
+nenwnwnwseswsenwnwnwnwnwnwnenwwnwnwnwnwnw
+senwwseenwwsewnenwwnenwnesewnwnwsee
+nenenwneneeneneneswsenenenewnenene
+nwswneewenwwneseweneneseneseswsesww
+nwnewswesenwseswswneswswwswnwswwswsesw
+wnwnwnwwsenwwwwwwwnewnewnwnwwnwse
+wewswsewswnwwswswwwnwsewwnewsww
+nenwnesenwnewnwnenwnwnenenwnenwswnenwnwene
+swswwseswswswswswnwnewswswswwswswsww
+nwnwswswnenenwnwsenenwnwnwwnenenwnenenwnw
+seswswseswswseeswswswswseswseswnwesww
+senewwswwewnewswsenewseenewsww
+swnwseewnwnwswwnweseeseeewseneeee
+enwnesenenenwneswneneswwnesenwnenwnewnwne
+wwwwwwenwwwwwwsewwwwww
+eweswnwnwseswwweswwneewnesewnenew
+swseswswswseseswswneswswswswseswswswnwswe
+seswswwsenwswenesw
+nenwneenwnwswnenenwnenwnwnenwwnwnwnenwe
+eewewneneweneeswneeseew
+nwswneswwswsewswswwswewwswswwseswswne
+sewsesesesenweseseweeswseseenw
+nwswseswneseewwswswswneswenwswnwwsw
+swseseswseseeswseswwwswseseseneesesenwse
+wswsewwswwsewneeswwnwewwwwww
+nwswseeswswseswnwnwnweneswswswswswwwsesw
+swweseseseswneswswswseseswsesesenwswswsw
+nwnwnwnwnwnewsenwnwnwsenewwwnwnwnwnw
+enewseeewnwswnwseswnenwnwneenenesenene
+wneswswswnwneesenwneeenesw
+wswwwswnewswswwnewswswswsewwww
+swnwseswseseenewswnwneneseneswsweswwsw
+eeeeeeeweseneweswseenwseseswe
+seswseseseseseseswwswswesese
+eseeseseesenwseesesesese
+swneswnwesesweseseswswsewswswsesenwse
+newwnesewsewewwenwwsw
+nenesenenenenwneseneneneneenewne
+neswnesenwneneneewnenenenenenenenenene
+eneeseeweseseseeseee
+swswwwswnwnweswwse
+neseenwnesenwnesenwsesewsesewsweeseese
+enenenenenwnwnwnenesenwnwswnwnwnene
+wwwewswewnewnwwwwwwwwsww
+nwnwnwwsewnwnwnwwwsenewnenwwwnwnw
+sweeseneeeeeweswewenwseesenenw
+weswwnwnwwwsewwwwwewwwwnw
+eeseneeesesweee
+enweseneweeswneseseswswneesenesw
+nwnwnenwnwswnwneenwneewnwse
+nwnwsenwseenwseseeswewsweeseeenwe
+swneswseswenwneswswsenwswswseswswswneenwsw
+sewswnwwnwnewnwwswswewnewnewwnw
+nenenweswswswswswswsenenwswswseswewswsw
+sesenenwnwnenesenesewwnenenwnenenwsew
+sesesewseseseeseseseseesesenesesesewse
+neneneneneswnenenenenenwnenenenwneswne
+wwsweswswweneseseswswsenwewneew
+eeeneeneneeenweeeeeseeneswe
+nwswswswnewswswwweswswwswnewsewswsw
+nwnwwnwnewnwsenwnwnwwenwnwswwnwnwnwnw
+sesenweenwseneeeseeseswswsenesesesw
+wwswwwnwwwnwwwwwwwnwwnwnwsee
+wwseswsweseneswseswswswswswswsweswnenw
+wneeeesweneenenewenenese
+swswenwnwswnwenwnenenwnwswnenwnenwsenw
+wwswwewnwnwswewnwsewseseswnwnenew
+nwnwwnwnwwwnwnwew
+swnesweswnewwswnwsweswsenwswswswseene
+seseswswwsenwnenwnenenwnwnwnwnenwsesenenw
+swswwsweswwswwwswswweewswwwnw
+eneeneeeeeeeswseeeeeswnwswe
+nwwwwnesewwnwwnwnwnwnwse
+neswseswswswseseswswsenwewnwswswnwswswe
+seswswswswnweswswsweseswsewswswseswsw
+swsesenwseseseswsenesew
+swnwnwnwnwnwnwnenwnwenwnwwnwwnwsenwnwnw
+seneseswswswseseeswseseswnwswsesesesww
+wwwnwnwnwnwwnewnwnwwsenwnwnwnw
+wsesenwsweneneseswnewswnewseneesww
+eeneneneeneseneeeeeswnwneneeene
+eneewswnesewneeeeneneneeenenenee
+neeeswnwewneewneswswseswwseneewenw
+enwswswsenewsewwswwnwwwswsewww
+swswnweenwnwwnwnwnwwnwnwenwwnwswnenw
+sweeseeenwneeseeeeeseseseesee
+neneenwnenwnenwseenenenewnwswnwsww
+nwneneneenenwnenwnwsenwnenwnwnwnwwnwswnwne
+nwnwnwnwnwnwwnwnwwnwnwenwwnwnwwswse
+swsewsesenwnwseswseesw
+seneeneneneneneneneswneeneneeweenee
+senwseswnwswwnwneswwseswswwswswswsesw
+nenwnwnenenesenewnenwsenesesenenenwnene
+wwnwwwewwswseswwwswwneewwwsw
+sesesweseseswseswswseeseseseswnwsenwsese
+nenewneneneneneswnenenwnesenenenenenenene
+wnwnwwnwwnwwenwwnwwwwnww
+wnwnwenenwnwneswnwsenwwnwwwwnwww
+sweneeneewswnwnwsenenenewweswseew
+wswenwnwnwnwnwnwnwnwnwnwnenwwnwnwnwnw
+eeneeswnwswswseneesweeenweeenenenw
+eswsweeeeneeeeeeneenweeee
+wswwneenwsewsewswnwseneswewneewsw
+nwenenenwswwswsenwnwnwneswwnwnwwnwnw
+sesesesesesesesesesesesesenwsese
+eseesweseewseseseeneseseseeeesew
+seswnenenenenenenwsenewwnesenenenenene
+neenwsweeeenwsewnewseeweeeene
+sewenewwwwsewneneseneswseseeesese
+seswswseswswswseswswseweeswweswnwswse
+swwseseeeeeeeenesesewnwneeesese
+eseneeeswswwnwwnesewneswwenwsenw
+seenwnweeeeseeesweseeeeeeswse
+seneseseseseseseswnesenesesewsew
+nenenenewswneneneswsenenenewseeneneswne
+sesenesesenewwesenwnwseseswswswseesenw
+sewseseeswsenwwnweseneeseseeeswenwe
+sewneseweseeeeseseseseseeseeesese
+nwnenwnwneneswnwnenenesenenenwwnwnenenwne
+senenwnwneewnwseeenwswswwnwnw
+wwswwnwwsweseswwwnwsweswwswswsw
+sewswswswwneseswseneswnwsweseswwseswsee
+esesweseseeswsenenwseseeeseseewsesese
+wwwwwsewwwwwwswwwnw
+enenwswneneswnewneneseneenenenwswenene
+sweseenwneneenwwswneneneneneneeene
+nwsenweesenwseenewseseseswenwewse
+nwswnwnwnwnwnwnwnwnwnwnwnwnwsenwnwe
+nwnwnwnwswesenwnwnwnenenwnenenwnenenenw
+swswswewswswswswnwswswswswswwweswswse
+wneseswseseseswseneeseesenewnwnwnesw
+eswnewnenwswenewneneneenenwneneseswne
+nwswweseseeesenwseseenesesewneseesw
+neswswesweeeesweneneeswenenwnwsewe
+nwnenwnweeeseneseseswesenwenesweneenw
+esweneeneeeeeneeeeeeweee
+neeneswnewnesewewesenwnenesenenwnene
+wwnwwwwwwnwnwseesenwnenwwnwwnw
+eswwwnwseneewswswseneswwnwwnwenwne
+swswswswwnenewswswswswswwswswneswswsw
+swnwswswswseswswswseswswsw
+seseesesesesenwseseeseseseesesewe
+seswneseswsesweswseseseseswsewswswswsw
+swswswnwsenwswsesenwnwnwswseswsesweswse
+swseswswseweseswswsesw
+nenesenenenenenenenewweneneseenenenene
+swseswnwwswsewnewsenwneswswswweww
+neeeeweeeeeee
+seseseswswsenwseseseseseseswse
+enenenwnenenenenenewnwsenwnwswswenesw
+nwneseseesweseseeeeswenwseswnwsesesw
+wwnwwwseneswwswwswewwwwwwwsw
+nwnwswseenwnwenwswswnwnenwneenwwneswese
+sewnwwnwnwsesewnewwwwwwewwsww
+nwswweswswwswsweeswswseswnwwsww
+wewwsewwwwwwwsenwwwwwnwnwwne
+swswswswwnwswswswswswnwsweseswswswsww
+wnwwnwswnwwnwewwneswswwwenwww
+newnenenwwneneswnenwnenweneesenwnwnene
+wneswsweswneeneswneneweneeenenee
+senwesesenwseseswswseseseseseseseswsese
+wwwswswenewsenweswwwswwwnewswnw
+nwswswswwswwnwneenwenwewewenwswne
+seseseswseenwseswenwneseeweeseeee
+ewseseseseseeeeeeseeseeseseenw
+neswneneenwnenenenenenenenenewnw
+swswwwwwwnewswwsenewnenewwwwsw
+swweswswswnewwnwwswwswwenw
+senenwwnwnwnwnwesenwnenwswnwnwnwswnwnwwnw
+nwnewswwwwnenwnewnwsenenwwwnwnwswsw
+nesweeesenwsweeeeesenweenwnee
+swwwwewnwwswwseswwweneewwnw
+nenwnwenwnwnenwwwsenwsewnwnwwnesw
+wseseseseneswnenenwsesesesenwswsese
+eenenewneneenweneeswnee
+wwwseewwnwnwnwwwwnwnwwsenwswnwnw
+newnenweswswnwneseswnenwseneseswnwnee
+seneseswseseswswesenwswswswswsese
+seesewenwnenwnenewsw
+nenenenwnwneswnwnwwsenenwnwnenwnw
+neeeeeneneneswwnese
+weneneeeswseneeweeneeneeeseeee
+seswswnesesesweseswwseswswnwswswseseswsw
+eeeseesenenweweneweeenwewwsw
+enwnwseseseeewnwsweswnenenwneswew
+wnweneenwsenesweneeeeneeneenesee
+neswsenwnesenwswwswsenwwsewwwsewne
+sewwwwnwsewwnewwwwewwwwww
+swswseswswswseseswenwsesw
+eeseeneeeenweweeeeeseseeee
+nwnenwnwwenwwsewwwnwnwnwwwsewwnw
+eneswwneneneneneneneneneseeneneenwne
+nenenwewneneneeneswswnenenenesenenene
+wnwsweswswswnwnwswenwseseseeswswswnwse
+sewnwwnwwnwnwsewnwwnwsewwnwnwwnew
+sweswwnwswswwewswnewnwnwsewswesesw
+seewnewwwnwnewswwwnwwwwsenwww
+swswswneswswswswwswswswseenwswswsweswse
+wnesenenenesweseewwneenwnwsweene
+senwseswswseswseseseswseseseseswswswnwse
+wsenweseseseswneneseswseseseneeswese
+esenwsewweseesewseeeswnwesesese
+wwswseneswwswwwswswww
+seeeewseeseeeneseenesweesesenw
+nwnwwwnwnwnwnwnwwnwweswwnwnwwwee
+neseeswsenwwseseeeeweneeweseee
+nwnenenenenenenenenwswnenenw
+nwnwwnweswnwnwnweseenwswnwnwnweswnwwne
+newneeneneneswwnwnesenenenewsenenesene
+wwswsenewsewwnenwwwewweswewnw
+swwneeswwsewnwwwwswwwnewwwwsww
+nenenenewneseneeenesewwneswenenwse
+nwnwneswnwenwnenwneenenwnewnesenwnwnww
+wnwsweswnwsweneeenenenwneeseenwesw
+swnewsweswswwswwneswswswsewswswwww
+nwnwnwwnwenwswnwwswwwnweenwswnwnw
+wwsenwwwnwesenwnwnenwnwwwsweswnww
+swwnwenwnwnwnenwnwswnwnwenwnwswnwnwwnenw
+seneseneseswswwseswswenwswswswseswneswnwe
+seseesenwseswseseswsesesesesenw
+swneswnwwnwswwwseswsesww
+wnewwwnewswswsewswwwwwwwnesw
+nwnwnenwsenwnwnwwswenwnwnwnw
+weeswnwswwseeswseeswswswnwsesewsw
+wnwwnwwwsewswnewnwwwnwwwwwe
+seseneseseseseseseseseseseseneseswsesew
+eeneseeewseeseeesweeeeeenee
+nwneswnwnwnwnwnwnwnwnwnenwnenw
+sesenwseenwswseeeeenwswweesesewnwse
+swseseseswswswnesesweswsenw
+senwnenwnwwnwnwsenenenwnenwnwsenewnwnw
+nenwwneewwswnesenwsesenwsenwnenwsenwse
+ewneneswnwswsewwsenwsewnenewnwnwwsw
+swswswseswswwnwseswneeswseswsw
+eweneeeeeenwseeneswnwseeeneswne
+seseseseseseseeseenenewsesenwsesesew
+wswswwwswswwwwswswwwseswnesw
+swwwswwwneswswwswwneswwwswwww
+eswseseswnesewnwswwseeswswswswswsesesesw
+swneneeneeneeseeweenwnweenenese
+wwnewswswswwswwwsewswswseswnenew
+eeeswneneneneneeeneneene
+neswnwenenwnwnwnenwnwse
+seweseeneeseeese
+nwswnwweneenwsenwseswswwnwswneneneene
+nwnesenwnwnenenwnenwnenwwwnwswnwenwnw
+nenenesenenesenenewnenenenenwnenenenwne
+esesesewseeseeesesewsesee
+neneseswnesenewwnenewnenwenenenene
+swswwwewswwwswwwwswswwwswsene
+nwnwnwwewnwnwnwnwnwnwnwwnwseewwsw
+neswneenweseneenweneweseesenwweee
+nwwneneeenewenenenewneneneneseseneese
+sweneneeeweneneeeenene
+nweneeswnwnwenwswnewseswswnew
+neneeeeneeneneswswnwenenwswenwsee
+eeswneeeeeeneenweswseeeeee
+senewswswseseseseswseswseswswsesese
+seewnwseseeeeeeeeeeeeseese
+wwnwwnwwwswswwnwseenewwnwweww
+swwwwswwswswwswnwswwswswew
+nwseeseeenwsweseenesesesewnwesesee
+swswswswswnwsweseneswswnwwswswsw
+eenwnweeeeseeeneeeeseeeew
+swwswswswnwswswwswswswseswswswswswesw
+swnwswswwneeweneseswwsenwswswnewe
+nweenwseeseseewswneewseseeesee
+swneswneneeneenwneene
+wwwnwneswwwwwnwwwwnewwswww
+nesweeeeewseneenw
+nwnwnwsewnwwnwnwnwenwnenwnwwwwwww
+newseneeneneneenenenenenenwnewnesw
+nwnwenweswnwnwnwnwesewswnewnwwseew
+senwswswswswseewseneswseswseseswswswnw
+nwsewwwwnewnwwwswenwwnwnwnwnww
+seswwwwwswnewwwwswenwwswswsww
+esweeenwenwnweeseeesweeeeee
+seeseseseeswesesesenwsesese
+swswwweneeweswwnewseswswwwnwewse
+nweenenwseenenewnesweneswenwnesewsene
+swneswswswswswswswswwswswsweswswswswsw
+nwnwnwsewnesenwswnenwnwsesenwnwnwsenwnw
+neseswsenwwnenwnwseswenenenenwwnewe
+wseseeseseswseseseesesesesesesesenenwnw
+newsenenwnwswnwwnwnwnwnwnenwwnwnwswwnw
+eneswswneewweneneeeswneseneneeseesw
+wwneswwwwwwsweswswwswwwseswww
+sewnewnenwwwwwwwwwwswsewwww
+nwnwnwnwswnenwsenwnenwneenesenewnenwne
+sesenwsweeewnenenwnwswnwnwnwnwnwwsw
+seseseswseseswneseneseseswenwsesenwseswse
+wwnewnwnwsenwwwwnwnwnwnwwsenwwnwenw
+swnwnwnenwnenenenwenenenwneneswnwnwnesene
+nwwewwsewwneswwsesenewnewwwwnww
+neewnenenweneeneeneneneeswnenenenene
+swseswswswseeswwswsesesewseswnwseswnenesw
+nenwneneneswnenwneenesenenenenesenwnewne
+nenwsesesesesesesesesesesesewsesesesesese
+sewswwnenwwnwesewwnwwwwwwewe
+nenwnwwsenweswwnwnw
+seeeeneenweeswneewnwneeneseene
+nenenenenwnenenenenenwswnwnenwnenwe
+seseeseswsenwseseesesewsesesesenwsenenw
+seneeeseswnewnesenewwsewnwnenenwe
+seenwnwnwswswnwsenenwnwwnwnweswnenewe
+neenenenenenenewenenesewneneneee
+nwswswswswwswwswneswswswsweswswswswwsw
+neeneneneswneeeeeneneeeneneeswnw
+swwswswseswswswswswwswswwwswneswswesw
+swwseswwseswwnenwwswwswswnesw
+wswswwswswenwnweswsenwnwwwswewsew
+wnwnwnwnwnwnwnwnwnwnwnwnwnwnwnwenw
+neeewesewswesewneswseeseseseenene
+nwnwswenwneenwnwnwnwnwnwwnenwnwnenw
+nwseesesenwesenwswswswnwswweeneswnesw
+ewwnwsweeeewwweeeeswwnee
+swwswneeeeneeeeeeeenwewesee
+nwsesenwnwsewnenwnwswsenenwnewnwseenwnw
+neneeneneeneswswenenenenwswnenwnenenene
+neneswswnwnwnwnwweneneenenenwnwnenwnw
+nwnwenwnwnwnwwnwnwnwswnwnwnesenw
+wenweswwwwwwwwwwwnwnwwwwwse
+sweneswsewwswsesweswswswswswnwsweswse
+swswswswswnwseswswseswenwwswnesweswsw
+senwseseeeeweenesenesweseeseeseswse", 100).Returns(3917).SetName("100m");
         }
     }
 }
